@@ -32,5 +32,13 @@
 *.dSYM/
 *.su
 
+#coverage files
+*.gcda
+*.gcno
+
+#tmp files
+*.swp
+
 # binaries
 assignment01/maxsum
+core

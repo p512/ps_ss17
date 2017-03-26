@@ -1,14 +1,16 @@
 CC = gcc
-CFLAGS = -std=c99 -pedantic -Wall -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -g -DENDEBUG
+CFLAGS = -std=c99 -pedantic -Wall -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -g -DENDEBUG -fprofile-arcs -ftest-coverage
 LFLAGS =
-OBJECTS = maxsum.c
 
-all: clean ue01
+
+all: clean ue01 invariant
 
 ue01 :
-		$(CC) $(LFLAGS) $(CFLAGS) $(OBJECTS) -o maxsum
+		$(CC) $(LFLAGS) $(CFLAGS) maxsum.c -o maxsum
+invariant :
+		$(CC) $(LFLAGS) $(CFLAGS) invariant.c -o invariant
 
 clean:
-		rm -f maxsum
+		rm -f maxsum invariant
 
 .PHONY: clean
