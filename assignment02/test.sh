@@ -24,9 +24,26 @@ cleanup() {
     rm -f testcase_*.cnf
 }
 
+withSuccess() {
+    [ -t 0 ] && echo -en '\033[32;1m✔ '
+    echo "$@"
+    [ -t 0 ] && echo -en '\033[0m'
+}
+
+withFail() {
+    [ -t 0 ] && echo -en '\033[31;1m✘ '
+    echo "$@"
+    [ -t 0 ] && echo -en '\033[0m'
+}
+
 doTest() {
     cat "${FILE}" $1 | fixFile
-    got="$(minisat "$tmp2" | tail -n1)"
+    got="$(minisat "$tmp2" 2>"$tmp" | tail -n1)"
+    if [ "$(wc -l < "$tmp")" -gt 0 ]; then
+        withFail "There were errors while executing minisat on $tmp2:"
+        cat $tmp
+        exit 1
+    fi
     if [ "$got" == "$4" ]; then
         if [ "$VERBOSE" == true ]; then
             echo PASS "$5" "$2" "$3"
@@ -46,6 +63,17 @@ solidTest() {
 notSolidTest() {
     doTest <(echo -e "$1 0\n-$2 0") $1 $2 SATISFIABLE "not solid"
 }
+
+#DEPENDENCIES
+declare -a deps=("minisat")
+for i in "${deps[@]}"; do
+    which $i > /dev/null || (echo Please install $i for me to work; exit 1);
+done
+
+if ! [ -f "$FILE" ]; then
+    withFail "ERROR: $FILE does not exist! Exiting..."
+    exit 1
+fi
 
 cleanup
 
@@ -293,12 +321,8 @@ doTest <(echo -e "1 0\n3 0") 1 3 UNSATISFIABLE custom2
 
 if [ "$failed" == 0 ]; then
     [ "$VERBOSE" == true ] && echo
-    [ -t 0 ] && echo -en '\033[32;1m✔ '
-    echo ALL TESTS PASSED
-    [ -t 0 ] && echo -en '\033[0m'
+    withSuccess ALL TESTS PASSED
 else
     echo
-    [ -t 0 ] && echo -en '\033[31;1m✘ '
-    echo "$failed" TESTS FAILED
-    [ -t 0 ] && echo -en '\033[0m'
+    withFail "$failed" TESTS FAILED
 fi
