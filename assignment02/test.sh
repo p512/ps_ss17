@@ -10,9 +10,25 @@ if [ -z "${VERBOSE+x}" ]; then
 fi
 
 #SCRIPT
-tmp="$(mktemp)"
-tmp2="$(mktemp)"
-failed=0
+minisatSolveStrategy() {
+    got="$(minisat "$tmp2" 2>"$tmp" | tail -n1)"
+}
+picosatSolveStrategy() {
+    got="$(picosat "$tmp2" 2>"$tmp" | head -n1 | sed 's/s \(.*\)/\1/g')"
+}
+
+init() {
+    tmp="$(mktemp)"
+    tmp2="$(mktemp)"
+    failed=0
+    if $(which minisat > /dev/null); then
+        solveStrategy=minisatSolveStrategy
+    elif $(which minisat > /dev/null); then
+        solveStrategy=picosatSolveStrategy
+    else
+        withFail Please install minisat or picosat
+    fi
+}
 
 fixFile() {
     # Clobbers both tmp files and leaves the result in tmp2
@@ -37,8 +53,8 @@ withFail() {
 }
 
 doTest() {
-    cat "${FILE}" $1 | fixFile
-    got="$(minisat "$tmp2" 2>"$tmp" | tail -n1)"
+    cat "${FILE}" $1 | grep '^[0-9-]' | fixFile
+    ${solveStrategy}
     if [ "$(wc -l < "$tmp")" -gt 0 ]; then
         withFail "There were errors while executing minisat on $tmp2:"
         cat $tmp
@@ -75,6 +91,7 @@ if ! [ -f "$FILE" ]; then
     exit 1
 fi
 
+init
 cleanup
 
 solidTest 1 4
